@@ -3,6 +3,9 @@ import ProfileModel from "../models/images/profile.model.js";
 import QuestionImage from "../models/images/questionImage.model.js";
 
 export const uploadQuestionImage = async (req, res) => {
+  // console.log(req.fields);
+  // console.log(req.files.questionImage)
+  // return;
   try {
     const { quizId } = req.body;
     const questionImage = await QuestionImage.create({

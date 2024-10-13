@@ -1,0 +1,40 @@
+services:
+  database:
+    image: mysql:9.0.1
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: trading_quiz
+    volumes:
+      - mysql_volumn:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    container_name: database
+  backend:
+    container_name: backend
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - 8080:8080
+    env_file:
+      - .env
+    volumes:
+      - ./uploads:/app/uploads
+      - /app/node_modules
+    develop:
+      watch:
+        - path: ./package.json
+          action: rebuild
+        - path: ./package-lock.json
+          action: rebuild
+        - path: .
+          target: /app
+          action: sync
+volumes:
+  mysql_volumn:

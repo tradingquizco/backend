@@ -5,7 +5,8 @@ import { uploadAnswerImage, uploadProfileImage, uploadQuestionImage } from "../c
 
 const router = express.Router();
 
-router.post("/questionImage", upload.single("questionImage"), uploadQuestionImage);
+router.post("/questionImage", uploadQuestionImage);
+// router.post("/questionImage", upload.single("questionImage"), uploadQuestionImage);
 router.post("/answerImage", upload.single("answerImage"), uploadAnswerImage);
 router.post("/profileImage", upload.single("profileImage"), uploadProfileImage);
 

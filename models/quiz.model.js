@@ -5,6 +5,7 @@ import Account from "./account.model.js";
 const { STRING, ENUM, INTEGER } = DataTypes;
 
 const Quiz = sequelize.define("quiz", {
+  
   title: {
     type: STRING,
     allowNull: false,
@@ -12,11 +13,6 @@ const Quiz = sequelize.define("quiz", {
   },
   description: {
     type: STRING,
-    allowNull: false,
-    defaultValue: "",
-  },
-  level: {
-    type: ENUM("hard", "medium", "easy", ""),
     allowNull: false,
     defaultValue: "",
   },
@@ -30,7 +26,7 @@ const Quiz = sequelize.define("quiz", {
     allowNull: false,
     defaultValue: "",
   },
-  option: {
+  options: {
     type: STRING,
     allowNull: false,
     defaultValue: "",
@@ -47,7 +43,7 @@ const Quiz = sequelize.define("quiz", {
     type: INTEGER,
     allowNull: false,
     references: {
-      model: "accounts",
+      model: Account,
       key: "id",
     },
   },

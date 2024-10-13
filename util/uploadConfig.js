@@ -8,10 +8,12 @@ const storage = multer.diskStorage({
     cb(null, "uploads"); // Directory to store uploaded images
   },
   filename: (req, file, cb) => {
+    console.log("file")
+    console.log(file)
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(
       null,
-      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
+      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname) + `.${file.mimetype.split('/')[1]}`
     ); // Unique filename
   },
 });
@@ -21,16 +23,11 @@ export const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const filetypes = /jpeg|jpg|png/;
-    const extname = filetypes.test(
-      path.extname(file.originalname).toLowerCase()
-    );
-    const mimetype = filetypes.test(file.mimetype);
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif']; // Specify allowed MIME types
 
-    if (mimetype && extname) {
-      return cb(null, true);
-    } else {
-      cb("Error: File type not supported!");
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+        return cb(new Error('File type not supported!'), false); // Reject file if type is not supported
     }
-  },
+    cb(null, true); // Accept the file
+},
 });
