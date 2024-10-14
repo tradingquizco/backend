@@ -7,7 +7,6 @@ import QuizAttempts from "../models/quizAttempts.model.js";
 import { SendRes } from "../util/helpers/index.js";
 
 export const createQuiz = async (req, res) => {
-  console.log(req.files);
   const {
     title,
     description,
@@ -33,7 +32,7 @@ export const createQuiz = async (req, res) => {
   ) {
     return SendRes(res, 409, { message: "All fields required" });
   }
-
+  
   try {
     const pack = await Pack.findOne({ where: { id: packId } });
     if (!pack) {
@@ -50,11 +49,11 @@ export const createQuiz = async (req, res) => {
     });
 
     const questionImg = await QuestionImage.create({
-      url: req.files["questionImage"][0].path,
+      url: req.files["questionImage"][0].fieldname,
       quizId: quiz.id,
     });
     const answerImg = await AnswerImage.create({
-      url: req.files["answerImage"][0].path,
+      url: req.files["answerImage"][0].fieldname,
       quizId: quiz.id,
     });
 

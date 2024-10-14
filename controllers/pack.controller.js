@@ -29,7 +29,7 @@ export const createPack = async (req, res) => {
       description,
       price: Number(price),
       creatorId: Number(creatorId),
-      coverImageUrl: req.file ? req.file.path : "", // set the cover image URL if the file is uploaded
+      coverImageUrl: req.file ? req.file.fieldname : "", // set the cover image URL if the file is uploaded
     });
 
     return SendRes(res, 200, pack);
