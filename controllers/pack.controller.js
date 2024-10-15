@@ -3,10 +3,12 @@ import Account from "../models/account.model.js";
 import Pack from "../models/pack.model.js";
 import Quiz from "../models/quiz.model.js";
 import { SendRes } from "../util/helpers/index.js";
+import CoverPack from "../models/images/coverPack.model.js";
 
 export const createPack = async (req, res) => {
   console.log("start creation");
   console.log(req.body);
+  console.log(req.file);
   const { title, description, level, isFree, price, creatorId } = req.body;
 
   // Check for required fields
@@ -29,12 +31,22 @@ export const createPack = async (req, res) => {
       description,
       price: Number(price),
       creatorId: Number(creatorId),
-      coverImageUrl: req.file ? req.file.fieldname : "", // set the cover image URL if the file is uploaded
+      coverImageUrl: "",
     });
 
-    return SendRes(res, 200, pack);
+    const packCover = await CoverPack.create({
+      url: req.file.filename,
+      packId: pack.id,
+    });
+    const updatedPack = await pack.update(
+      { coverImageUrl: packCover.url },
+      {
+        returning: true,
+      }
+    );
+    return SendRes(res, 200, updatedPack);
   } catch (err) {
-    console.error("Error creating pack:", err); // Log the error details
+    console.error("Error creating pack:", err);
     return SendRes(res, 500, {
       message: "Internal server error",
       error: err.message,
@@ -70,22 +82,28 @@ export const getAllPacks = async (req, res) => {
 
 export const updatePack = async (req, res) => {
   const updatedItems = req.body;
-  const {packId} = req.params;
+  const { packId } = req.params;
 
-  if(JSON.stringify(updatedItems) === "{}" && !req.file) {
+  if (JSON.stringify(updatedItems) === "{}" && !req.file) {
     SendRes(res, 400, { message: "You Should Change At Lease One Property" });
   }
   try {
-    const pack = await Pack.findOne({where: {id: packId}})
-    const updatedPack = await pack.update({...updatedItems, coverImageUrl: req.file ? req.file.path : pack.dataValues.coverImageUrl}, {
-      returning: true,
-    });
-  
-    SendRes(res, 200, updatedPack)
-  } catch(err) {
+    const pack = await Pack.findOne({ where: { id: packId } });
+    const updatedPack = await pack.update(
+      {
+        ...updatedItems,
+        coverImageUrl: req.file ? req.file.path : pack.dataValues.coverImageUrl,
+      },
+      {
+        returning: true,
+      }
+    );
+
+    SendRes(res, 200, updatedPack);
+  } catch (err) {
     return SendRes(res, 500, { message: "Internal server error" });
   }
-}
+};
 
 export const getAccountPacks = async (req, res) => {
   const { accountId } = req.params;

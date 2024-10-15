@@ -49,11 +49,11 @@ export const createQuiz = async (req, res) => {
     });
 
     const questionImg = await QuestionImage.create({
-      url: req.files["questionImage"][0].fieldname,
+      url: req.files["questionImage"][0].filename,
       quizId: quiz.id,
     });
     const answerImg = await AnswerImage.create({
-      url: req.files["answerImage"][0].fieldname,
+      url: req.files["answerImage"][0].filename,
       quizId: quiz.id,
     });
 
@@ -69,8 +69,6 @@ export const createQuiz = async (req, res) => {
     );
 
     pack.addQuiz(updatedQuiz);
-    console.log(pack);
-
     // Send success response
     return SendRes(res, 200, updatedQuiz);
   } catch (err) {

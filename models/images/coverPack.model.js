@@ -2,16 +2,16 @@ import { DataTypes } from "sequelize";
 import sequelize from "../../util/database.js";
 
 const CoverPack = sequelize.define(
-  "profile-images",
+  "coverPaxk",
   {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
-    accountId: {
+    packId: {
       type: DataTypes.INTEGER,
-      allowNull: true,
+      allowNull: false,
     },
     url: {
       type: DataTypes.STRING,
@@ -19,7 +19,7 @@ const CoverPack = sequelize.define(
     },
   },
   {
-    tableName: "profileImages",
+    tableName: "CoverPack",
   }
 );
 
