@@ -20,18 +20,23 @@ const Pack = sequelize.define(
       defaultValue: "",
     },
     level: {
-      type: DataTypes.ENUM("hard", "medium", "easy"), // Removed empty string from ENUM
+      type: DataTypes.ENUM("hard", "medium", "easy"),
       allowNull: false,
-      defaultValue: "medium", // Set a default level
+      defaultValue: "medium",
     },
     isFree: {
-      type: DataTypes.BOOLEAN, // Use BOOLEAN instead of TINYINT(1)
+      type: DataTypes.BOOLEAN,
       allowNull: false,
-      defaultValue: false, // Default value can be set to false
+      defaultValue: false,
+    },
+    category: {
+      type: DataTypes.ENUM("Technical Analysis", "Smart Money"),
+      allowNull: false,
+      defaultValue: "Technical Analysis"
     },
     price: {
       type: DataTypes.FLOAT,
-      defaultValue: 0.0, // Set a default price
+      defaultValue: 0.0,
     },
     public: {
       type: DataTypes.BOOLEAN,
@@ -45,7 +50,7 @@ const Pack = sequelize.define(
   },
   {
     tableName: "packs",
-    timestamps: true, // Automatically creates createdAt and updatedAt
+    timestamps: true,
   }
 );
 

@@ -32,7 +32,7 @@ export const createQuiz = async (req, res) => {
   ) {
     return SendRes(res, 409, { message: "All fields required" });
   }
-  
+
   try {
     const pack = await Pack.findOne({ where: { id: packId } });
     if (!pack) {
@@ -68,6 +68,10 @@ export const createQuiz = async (req, res) => {
       }
     );
 
+    // const quizzes = await pack.getQuizzes();
+    // console.log(quizzes);
+    // if (quizzes.length === 1)
+    //   return SendRes(res, 400, { message: "You Hit limit of quizzes" });
     pack.addQuiz(updatedQuiz);
     // Send success response
     return SendRes(res, 200, updatedQuiz);

@@ -6,13 +6,11 @@ import { SendRes } from "../util/helpers/index.js";
 import CoverPack from "../models/images/coverPack.model.js";
 
 export const createPack = async (req, res) => {
-  console.log("start creation");
-  console.log(req.body);
-  console.log(req.file);
-  const { title, description, level, isFree, price, creatorId } = req.body;
+
+  const { title, description, level, isFree, price, category, creatorId } = req.body;
 
   // Check for required fields
-  if (!title || !description || !creatorId || !level || !isFree || !price) {
+  if (!title || !description || !creatorId || !level || !isFree || !price || !category) {
     SendRes(res, 409, { message: "All fields required" });
     return;
   }
@@ -29,6 +27,7 @@ export const createPack = async (req, res) => {
       isFree,
       level,
       description,
+      category,
       price: Number(price),
       creatorId: Number(creatorId),
       coverImageUrl: "",
@@ -59,7 +58,6 @@ export const getAllPacks = async (req, res) => {
       include: { model: Account, attributes: ["username"] },
     });
 
-    // Use Promise.all to resolve all promises returned by map
     const formattedPacks = await Promise.all(
       packs.map(async (pack) => {
         const quizzes = await pack.getQuizzes();
@@ -69,6 +67,9 @@ export const getAllPacks = async (req, res) => {
           title: pack.dataValues.title,
           quizNumber: quizzes.length, // Get the number of quizzes
           username: pack.dataValues.account.dataValues.username,
+          coverImageUrl: pack.coverImageUrl,
+          category: pack.category,
+          level: pack.level
         };
       })
     );
@@ -146,6 +147,9 @@ export const addQuizToPack = async (req, res) => {
     if (!Quiz) return SendRes(res, 404, { message: "Quiz Not Found" });
 
     if (pack && quizId) {
+      const quizzes = await pack.getQuizzes();
+      console.log(quizzes);
+      if(quizzes.length  === 1) return SendRes(res, 400, {message: "You Hit limit of quizzes"})
       pack.addQuiz(quiz);
       SendRes(res, 200, { message: "quiz added to pack" });
     }
