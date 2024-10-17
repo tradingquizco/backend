@@ -4,6 +4,8 @@ import QuestionImage from "../models/images/questionImage.model.js";
 import Pack from "../models/pack.model.js";
 import Quiz from "../models/quiz.model.js";
 import QuizAttempts from "../models/quizAttempts.model.js";
+import CalculatePackPrice from "../util/helpers/calculatePackPrice.js";
+import GetQuizPrice from "../util/helpers/getQuizPrice.js";
 import { SendRes } from "../util/helpers/index.js";
 
 export const createQuiz = async (req, res) => {
@@ -57,7 +59,6 @@ export const createQuiz = async (req, res) => {
       quizId: quiz.id,
     });
 
-    // Update quiz with image URLs
     const updatedQuiz = await quiz.update(
       {
         questionImgUrl: questionImg.url,
@@ -68,15 +69,16 @@ export const createQuiz = async (req, res) => {
       }
     );
 
-    // const quizzes = await pack.getQuizzes();
-    // console.log(quizzes);
-    // if (quizzes.length === 1)
-    //   return SendRes(res, 400, { message: "You Hit limit of quizzes" });
+    //todo: add limit of 25 quizzes;
     pack.addQuiz(updatedQuiz);
-    // Send success response
+    if(!pack.isFree) {
+      const newPrice = await GetQuizPrice(pack);
+      await pack.update({price: Number(pack.price + newPrice)});
+    }
+
     return SendRes(res, 200, updatedQuiz);
   } catch (err) {
-    console.error(err); // Log the error for debugging
+    console.error(err);
     return SendRes(res, 500, { message: "Internal server error" });
   }
 };
@@ -183,11 +185,11 @@ export const getPackQuizzes = async (req, res) => {
     const pack = await Pack.findByPk(packId, {
       include: [
         {
-          model: Quiz, // Assuming 'Quiz' is associated with 'Pack'
+          model: Quiz,
           include: [
             {
-              model: Account, // Assuming 'Account' is associated with 'Quiz'
-              attributes: ["username"], // Fetch only the 'username' field
+              model: Account,
+              attributes: ["username"],
             },
           ],
         },
