@@ -3,7 +3,7 @@ import { config } from "dotenv";
 
 config();
 const sequelize = new Sequelize(
-  process.env.DB_NAME,
+  "tradingquiz",
   process.env.DB_USERNAME,
   process.env.DB_PASSWORD,
   {

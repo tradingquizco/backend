@@ -66,12 +66,14 @@ export const getAllPacks = async (req, res) => {
         return {
           id: pack.dataValues.id,
           title: pack.dataValues.title,
-          quizNumber: quizzes.length, // Get the number of quizzes
+          description: pack.description,
+          quizNumber: quizzes.length,
           username: pack.dataValues.account.dataValues.username,
           coverImageUrl: pack.coverImageUrl,
           category: pack.category,
           level: pack.level,
           price: pack.price,
+          isFree: pack.isFree,
         };
       })
     );

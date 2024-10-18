@@ -40,6 +40,10 @@ export const createQuiz = async (req, res) => {
     if (!pack) {
       return SendRes(res, 404, { message: "Pack not found" });
     }
+
+    const packQuizzes = await pack.getQuizzes();
+    if(packQuizzes.length >= 25 ) return SendRes(res, 400, {message: "You Hit Limit of This Pack"})
+
     const quiz = await Quiz.create({
       title,
       description,
@@ -69,13 +73,12 @@ export const createQuiz = async (req, res) => {
       }
     );
 
-    //todo: add limit of 25 quizzes;
-    pack.addQuiz(updatedQuiz);
     if(!pack.isFree) {
       const newPrice = await GetQuizPrice(pack);
       await pack.update({price: Number(pack.price + newPrice)});
     }
 
+    pack.addQuiz(updatedQuiz);
     return SendRes(res, 200, updatedQuiz);
   } catch (err) {
     console.error(err);
