@@ -9,10 +9,6 @@ const QuizAttempts = sequelize.define("quiz-attempt", {
         allowNull: false
     },
     isCurrect: {type: DataTypes.BOOLEAN, allowNull: false},
-    submitDate: {
-        type: DataTypes.STRING,
-        allowNull: false
-    }
 }, {modelName: "QuizAttempts", tableName: "quizAttempts"});
 
 QuizAttempts.belongsTo(Account, {foreignKey: "accountId", onDelete:"CASCADE"})

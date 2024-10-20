@@ -5,6 +5,11 @@ import Account from "./account.model.js";
 const Pack = sequelize.define(
   "Pack",
   {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
     title: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -32,7 +37,7 @@ const Pack = sequelize.define(
     category: {
       type: DataTypes.ENUM("Technical Analysis", "Smart Money"),
       allowNull: false,
-      defaultValue: "Technical Analysis"
+      defaultValue: "Technical Analysis",
     },
     price: {
       type: DataTypes.FLOAT,

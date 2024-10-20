@@ -140,7 +140,7 @@ export const deleteQuiz = async (req, res) => {
 };
 
 export const submitQuiz = async (req, res) => {
-  const { quizId, userId, selectedOption, submitDate, isCurrect } = req.body;
+  const { quizId, userId, selectedOption, isCurrect } = req.body;
   if (
     !quizId ||
     !userId ||
@@ -201,8 +201,7 @@ export const getPackQuizzes = async (req, res) => {
 
     if (!pack) {
       return SendRes(res, 404, { message: "Pack not found" });
-    }
-
+    } 
     // Map the quizzes to add 'username' and 'packId' to each quiz object
     const quizzesWithUsername = pack.quizzes.map((quiz) => ({
       ...quiz.toJSON(), // Convert Sequelize object to plain JSON

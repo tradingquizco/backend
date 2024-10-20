@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  addPackToUserPacks,
   createUser,
   deleteUser,
   getAllUser,
@@ -19,5 +20,6 @@ router.route("/email/:email").get(getUserByEmail);
 router.route("/account").get(getUserByAccount);
 router.route("/update/:id").patch(updateUser);
 router.route("/:id").delete(deleteUser);
+router.route("/addPack").post(addPackToUserPacks)
 
 export default router;

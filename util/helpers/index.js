@@ -8,6 +8,8 @@ import AnswerImage from "../../models/images/answerImage.model.js";
 import Pack from "../../models/pack.model.js";
 import CoverPack from "../../models/images/coverPack.model.js";
 import QuizPack from "../../models/quizPack.model.js";
+import UserPack from "../../models/accountPack.model.js";
+import AccountPack from "../../models/accountPack.model.js";
 
 export const SendRes = (res, status = 200, body = null) =>
   res.status(status).json(body);
@@ -25,6 +27,7 @@ export const CreateAssociations = () => {
     foreignKey: "accountId",
     onDelete: "CASCADE",
   });
+  Account.belongsToMany(Pack, {through: AccountPack})
 
   // Session
   Session.belongsTo(User, { foreignKey: "userId", onDelete: "CASCADE" });
@@ -45,8 +48,8 @@ export const CreateAssociations = () => {
 
   // Pack
   Pack.belongsToMany(Quiz, { through: QuizPack });
+  Pack.belongsToMany(Account, { through: AccountPack });
   Pack.belongsTo(Account, { foreignKey: "creatorId", onDelete: "CASCADE" });
-  
   // Question Image
   QuestionImage.belongsTo(Quiz, { foreignKey: "quizId", onDelete: "CASCADE" });
 

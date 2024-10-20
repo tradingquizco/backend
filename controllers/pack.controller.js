@@ -6,6 +6,7 @@ import { SendRes } from "../util/helpers/index.js";
 import CoverPack from "../models/images/coverPack.model.js";
 import GetQuizPrice from "../util/helpers/getQuizPrice.js";
 import GetPackPrice from "../util/helpers/getPackPrice.js";
+import AccountPack from "../models/accountPack.model.js";
 
 export const createPack = async (req, res) => {
   const { title, description, level, isFree, category, creatorId } = req.body;
@@ -62,13 +63,14 @@ export const getAllPacks = async (req, res) => {
     const formattedPacks = await Promise.all(
       packs.map(async (pack) => {
         const quizzes = await pack.getQuizzes();
+        const account = await pack.getAccount();
 
         return {
-          id: pack.dataValues.id,
-          title: pack.dataValues.title,
+          id: pack.id,
+          title: pack.title,
           description: pack.description,
           quizNumber: quizzes.length,
-          username: pack.dataValues.account.dataValues.username,
+          username: account.username,
           coverImageUrl: pack.coverImageUrl,
           category: pack.category,
           level: pack.level,
@@ -172,6 +174,28 @@ export const addQuizToPack = async (req, res) => {
       SendRes(res, 200, { message: "quiz added to pack" });
     }
   } catch (err) {
+    return SendRes(res, 500, { message: "Internal server error" });
+  }
+};
+
+export const getAccountPacksList = async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) return SendRes(res, 404, { message: "account Id required" });
+
+  try {
+    const packs = await AccountPack.findAll({where: {accountId: id}});
+    const updatedPack = await Promise.all(
+      packs.map(async pack => {
+        const packInfo = await Pack.findByPk(pack.PackId);
+        const account = await Account.findByPk(pack.accountId)
+        return {...packInfo.dataValues, account: {...account.dataValues}}
+      })
+    )
+
+    SendRes(res, 200, updatedPack);
+  } catch (err) {
+    console.log(err);
     return SendRes(res, 500, { message: "Internal server error" });
   }
 };

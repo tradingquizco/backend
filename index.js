@@ -50,29 +50,6 @@ app.use("/api/v1/packs", packRoutes)
 app.use("/api/v1", authRoutes);
 app.use("/api/v1/upload", uploadRoutes);
 
-// app.get("/uploads/:filename", (req, res) => {
-//   const filePath = path.join(__dirname, "uploads", req.params.filename);
-//   if (fs.existsSync(filePath)) {
-//     res.sendFile(filePath);
-//   } else {
-//     res.status(404).send("File not found");
-//   }
-// });
-
-// app.post(
-//   "/api/v1/test",
-//   upload.fields([
-//     { name: "questionImage" },
-//     { name: "answerImage" },
-//     { name: "packCover" },
-//   ]),
-//   (req, res) => {
-//     console.log(req.files);
-//     console.log(req.body);
-
-//     res.send("test");
-//   }
-// );
 
 app.post("/post", (req, res) => {
   console.log(req.fields);

@@ -1,4 +1,5 @@
 import Account from "../models/account.model.js";
+import QuizAttempts from "../models/quizAttempts.model.js";
 import User from "../models/user.model.js";
 import { SendRes } from "../util/helpers/index.js";
 
@@ -60,6 +61,21 @@ export const getUserAccounts = async (req, res) => {
   try {
     const accounts = await Account.findAll({where: {userId: id}});
     SendRes(res, 200, accounts)
+  } catch(err) {
+    SendRes(res, 500, { message: "Internal server error" });
+  }
+}
+
+export const getAccountSubmitHistory = async (req, res) => {
+  const {quizId, accountId} = req.params;
+
+  if(!quizId || !accountId) {
+    return SendRes(res, 409, { message: "All fields required" });
+  }
+
+  try {
+    const accountSubmitInfo = await QuizAttempts.findOne({where: {accountId, quizId}});
+    SendRes(res, 200, accountSubmitInfo)
   } catch(err) {
     SendRes(res, 500, { message: "Internal server error" });
   }

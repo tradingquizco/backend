@@ -1,4 +1,5 @@
 import Account from "../models/account.model.js";
+import Pack from "../models/pack.model.js";
 import User from "../models/user.model.js";
 import { SendRes } from "../util/helpers/index.js";
 
@@ -11,7 +12,10 @@ export const createUser = async (req, res) => {
   }
 
   try {
-    const [user, isCreated] = await User.findOrCreate({where: {email}, defaults: {name, password}})
+    const [user, isCreated] = await User.findOrCreate({
+      where: { email },
+      defaults: { name, password },
+    });
     SendRes(res, 200, user);
   } catch (err) {
     SendRes(res, 500, { message: "Internal server error" });
@@ -93,9 +97,32 @@ export const updateUser = async (req, res) => {
 export const deleteUser = async (req, res) => {
   const { id } = req.params;
   try {
-    await User.destroy({where: {id}});
-    SendRes(res, 200, {message: "User successfully deleted"});
+    await User.destroy({ where: { id } });
+    SendRes(res, 200, { message: "User successfully deleted" });
   } catch (err) {
+    SendRes(res, 500, { message: "Internal server error" });
+  }
+};
+
+export const addPackToUserPacks = async (req, res) => {
+  const { packId, accountId } = req.body;
+
+  console.log(req.body)
+
+  if (!packId || !accountId)
+    return SendRes(res, 409, { message: "All Feilds are required" });
+
+  try {
+    const account = await Account.findByPk(accountId);
+    if (!account) return SendRes(res, 404, { message: "Account not found" });
+
+    const pack = await Pack.findByPk(packId);
+    if (!pack) return SendRes(res, 404, { message: "Pack not found" });
+
+    pack.addAccount(account);
+    SendRes(res, 200, { message: "Pack Added" });
+  } catch (err) {
+    console.log(err);
     SendRes(res, 500, { message: "Internal server error" });
   }
 };

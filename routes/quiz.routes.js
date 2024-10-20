@@ -10,6 +10,7 @@ router.route("/").post(upload.fields([{ name: 'questionImage'}, { name: 'answerI
 router.route("/update/:id").patch(upload.fields([{ name: 'questionImage'}, { name: 'answerImage' },]),updateQuiz);
 router.route("/:id").delete(deleteQuiz);
 router.route("/submit").post(submitQuiz);
+router.route("/submit/:accountId/:quizId").get()
 router.route("/pack/:packId").get(getPackQuizzes)
 
 export default router;
