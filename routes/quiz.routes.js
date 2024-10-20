@@ -1,5 +1,5 @@
 import express from 'express'
-import { createQuiz, deleteQuiz, getAllQuiz, getPackQuizzes, getQuizByID, submitQuiz, updateQuiz } from '../controllers/quiz.controller.js';
+import { createQuiz, deleteQuiz, getAllQuiz, getPackQuizzes, getQuizByID, getSubmitInfo, submitQuiz, updateQuiz } from '../controllers/quiz.controller.js';
 import { upload } from '../util/uploadConfig.js';
 
 const router = express.Router();
@@ -10,7 +10,8 @@ router.route("/").post(upload.fields([{ name: 'questionImage'}, { name: 'answerI
 router.route("/update/:id").patch(upload.fields([{ name: 'questionImage'}, { name: 'answerImage' },]),updateQuiz);
 router.route("/:id").delete(deleteQuiz);
 router.route("/submit").post(submitQuiz);
-router.route("/submit/:accountId/:quizId").get()
+router.route("/submit/Info").get(getSubmitInfo);
+// router.route("/submit/:accountId/:quizId").get()
 router.route("/pack/:packId").get(getPackQuizzes)
 
 export default router;

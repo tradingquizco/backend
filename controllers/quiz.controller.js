@@ -42,7 +42,8 @@ export const createQuiz = async (req, res) => {
     }
 
     const packQuizzes = await pack.getQuizzes();
-    if(packQuizzes.length >= 25 ) return SendRes(res, 400, {message: "You Hit Limit of This Pack"})
+    if (packQuizzes.length >= 25)
+      return SendRes(res, 400, { message: "You Hit Limit of This Pack" });
 
     const quiz = await Quiz.create({
       title,
@@ -73,9 +74,9 @@ export const createQuiz = async (req, res) => {
       }
     );
 
-    if(!pack.isFree) {
+    if (!pack.isFree) {
       const newPrice = await GetQuizPrice(pack);
-      await pack.update({price: Number(pack.price + newPrice)});
+      await pack.update({ price: Number(pack.price + newPrice) });
     }
 
     pack.addQuiz(updatedQuiz);
@@ -139,13 +140,36 @@ export const deleteQuiz = async (req, res) => {
   }
 };
 
+export const getSubmitInfo = async (req, res) => {
+  const accountId = req.query.accountId;
+  const quizId = req.query.quizId;
+
+  if (!quizId || !accountId) {
+    return SendRes(res, 409, { message: "All fields required" });
+  }
+
+  try {
+    const account = await Account.findByPk(accountId);
+    if (!account) return SendRes(res, 404, { message: "Account Not Found" });
+
+    const quiz = await Quiz.findByPk(quizId);
+    if (!quiz) return SendRes(res, 404, { message: "Quiz Not Found" });
+
+    const submitInfo = await QuizAttempts.findOne({
+      where: { quizId, accountId },
+    });
+    SendRes(res, 200, submitInfo);
+  } catch (err) {
+    SendRes(res, 500, { message: "Internal server error" });
+  }
+};
+
 export const submitQuiz = async (req, res) => {
-  const { quizId, userId, selectedOption, isCurrect } = req.body;
+  const { quizId, accountId, selectedOption, isCurrect } = req.body;
   if (
     !quizId ||
-    !userId ||
+    !accountId ||
     !selectedOption ||
-    !submitDate ||
     isCurrect === null
   ) {
     SendRes(res, 409, { message: "All fields required" });
@@ -153,7 +177,7 @@ export const submitQuiz = async (req, res) => {
   }
   try {
     const [newQuizAttempt, isCreated] = await QuizAttempts.findOrCreate({
-      where: { quizId, userId, submitDate },
+      where: { quizId, accountId },
       defaults: { isCurrect, selectedOption },
     });
     SendRes(res, 200, newQuizAttempt);
@@ -201,7 +225,7 @@ export const getPackQuizzes = async (req, res) => {
 
     if (!pack) {
       return SendRes(res, 404, { message: "Pack not found" });
-    } 
+    }
     // Map the quizzes to add 'username' and 'packId' to each quiz object
     const quizzesWithUsername = pack.quizzes.map((quiz) => ({
       ...quiz.toJSON(), // Convert Sequelize object to plain JSON

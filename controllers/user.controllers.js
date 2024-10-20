@@ -56,17 +56,15 @@ export const getUserByEmail = async (req, res) => {
 };
 
 export const getUserByAccount = async (req, res) => {
-  const { providerAccountId, provider } = req.query;
+  const { accountId } = req.params;
 
-  if (!provider || !providerAccountId) {
+  if (!accountId) {
     SendRes(res, 409, { message: "All fields required" });
     return;
   }
 
   try {
-    const account = await Account.findOne({
-      where: { provider, providerAccountId },
-    });
+    const account = await Account.findByPk(accountId)
     if (account) {
       const user = await account.getUser();
       if (user) SendRes(res, 200, user);

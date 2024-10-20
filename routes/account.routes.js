@@ -5,6 +5,7 @@ const router = express.Router();
 
 router.route("/").post(createAccount);
 router.route("/:id").delete(DeleteAccount);
+//todo: update account;
 router.route("/validation-account").post(IsAccountValid)
 
 export default router;
