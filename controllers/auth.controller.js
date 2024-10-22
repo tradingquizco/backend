@@ -94,6 +94,14 @@ export const login = async (req, res) => {
 export const register = async (req, res) => {
   const { username, email, password, name } = req.body;
 
+  const userAgent = req.headers["sec-ch-ua"] || req.headers["user-agent"];
+  const isMobile = req.headers["sec-ch-ua-mobile"] === "?1";
+  const platform = req.headers["sec-ch-ua-platform"] || "Unknown";
+  const clientIp = requestIp.getClientIp(req);
+  const ipv4Address = clientIp.includes("::ffff:")
+    ? clientIp.split("::ffff:")[1]
+    : clientIp;
+
   if (!username || !email || !password || !name) {
     SendRes(res, 409, { message: "All fields required" });
   }
@@ -123,8 +131,54 @@ export const register = async (req, res) => {
       defaults: { role: "user", profile: "" },
     });
 
-    SendRes(res, 200, { message: "Registration successful" });
+    const [session, isSessionCreated] = await Session.findOrCreate({
+      where: {
+        userId: user.id,
+        accountId: account.id,
+        platform: platform,
+        mobile: isMobile,
+        ipAddress: ipv4Address,
+        userAgent,
+      },
+      defaults: {
+        sessionToken: JSON.stringify({
+          email: user.email,
+          name: user.name,
+          account: account,
+        }),
+        expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    if (isSessionCreated) {
+      console.log("updating");
+      await session.update({
+        expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+      });
+    }
+
+    const responseBody = {
+      sessionToken: session.sessionToken,
+      sessionId: session.id,
+      cookieConfig: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        domain: process.env.COOKIE_DOMAIN.toString(),
+        path: "/",
+        sameSite: "lax",
+        maxAge: session.expiresAt,
+      },
+      url:
+        account.role === "quizer"
+          ? process.env.QUIZER_URL
+          : account.role === "user"
+          ? process.env.USER_URL
+          : process.env.ADMIN_URL,
+    };
+
+    SendRes(res, 200, responseBody);
   } catch (err) {
+    console.log(err);
     SendRes(res, 500, err);
   }
 };
