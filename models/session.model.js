@@ -1,37 +1,86 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../util/database.js";
+import bcrypt from "bcryptjs";
 
 const Session = sequelize.define(
   "session",
   {
-    sessionData: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    currentAccountId: {
+    id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "accounts",
-        key: "id",
-      },
+      autoIncrement: true,
+      primaryKey: true,
     },
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "users",
+        model: "users", // Assuming you have a users table
         key: "id",
       },
+      onDelete: "CASCADE",
     },
-    expires: {
+    sessionToken: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+    },
+    userAgent: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    ipAddress: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    platform: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+    },
+    mobile: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    expiresAt: {
       type: DataTypes.DATE,
       allowNull: false,
     },
   },
-  { modelName: "session", tableName: "sessions" }
+  {
+    modelName: "session",
+    tableName: "sessions",
+    hooks: {
+      // Inside your hooks
+      beforeCreate: async (session) => {
+        const saltRounds = parseInt(process.env.SALT, 10);
+        if (!saltRounds) {
+          throw new Error(
+            "SALT environment variable is not defined or invalid."
+          );
+        }
+
+        if (session.sessionToken) {
+          session.sessionToken = await bcrypt.hash(
+            session.sessionToken,
+            saltRounds
+          );
+        }
+      },
+      beforeUpdate: async (session) => {
+        if (session.changed("sessionToken")) {
+          const saltRounds = parseInt(process.env.SALT, 10);
+          if (!saltRounds) {
+            throw new Error(
+              "SALT environment variable is not defined or invalid."
+            );
+          }
+          session.sessionToken = await bcrypt.hash(
+            session.sessionToken,
+            saltRounds
+          );
+        }
+      },
+    },
+  }
 );
-
-
 
 export default Session;

@@ -17,24 +17,17 @@ export const SendRes = (res, status = 200, body = null) =>
 export const CreateAssociations = () => {
   // Accounts
   Account.belongsTo(User, { foreignKey: "userId", onDelete: "CASCADE" });
-  Account.hasMany(Session, {
-    foreignKey: "currentAccountId",
-    onDelete: "CASCADE",
-  });
   Account.hasMany(Quiz, { foreignKey: "creatorId", onDelete: "CASCADE" });
   Account.hasMany(Pack, { foreignKey: "creatorId", onDelete: "CASCADE" });
   Account.hasOne(ProfileModel, {
     foreignKey: "accountId",
     onDelete: "CASCADE",
   });
-  Account.belongsToMany(Pack, {through: AccountPack})
+  Account.belongsToMany(Pack, { through: AccountPack });
 
   // Session
   Session.belongsTo(User, { foreignKey: "userId", onDelete: "CASCADE" });
-  Session.belongsTo(Account, {
-    foreignKey: "currentAccountId",
-    onDelete: "CASCADE",
-  });
+  Session.belongsTo(Account, { foreignKey: "accountId", onDelete: "CASCADE" });
 
   // Users
   User.hasMany(Session, { foreignKey: "userId", onDelete: "CASCADE" });

@@ -1,13 +1,21 @@
 import Account from "../models/account.model.js";
 import Session from "../models/session.model.js";
 import User from "../models/user.model.js";
+import createHash from "../util/helpers/createHash.js";
 import { SendRes } from "../util/helpers/index.js";
 import bcrypt from "bcryptjs";
+import requestIp from "request-ip";
 
 export const login = async (req, res) => {
-  console.log(req.body);
   const { email, password } = req.body;
-  // const { email, password } = req.body;
+
+  const userAgent = req.headers["sec-ch-ua"] || req.headers["user-agent"];
+  const isMobile = req.headers["sec-ch-ua-mobile"] === "?1";
+  const platform = req.headers["sec-ch-ua-platform"] || "Unknown";
+  const clientIp = requestIp.getClientIp(req);
+  const ipv4Address = clientIp.includes("::ffff:")
+    ? clientIp.split("::ffff:")[1]
+    : clientIp;
 
   if (!email || !password) {
     return SendRes(res, 400, { message: "Email and password are required" });
@@ -21,40 +29,62 @@ export const login = async (req, res) => {
       return SendRes(res, 401, { message: "Incorrect email or passwrod" });
     }
 
-    // Compare the provided password with the hashed password
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
       return SendRes(res, 401, { message: "Incorrect email or passwrod" });
     }
 
-    // Assume each user has at least one account
     const account = await Account.findAll({ where: { userId: user.id } });
+    if (!account) return SendRes(res, 404, { message: "Account Not Found" });
 
-    // Create a session for the user (Assuming you have session handling set up)
+    const expiration_at_15_days = Date.now() + 15 * 24 * 60 * 60 * 1000;
     const [session, isSessionCreated] = await Session.findOrCreate({
-      where: { userId: user.id, currentAccountId: account[0].id },
+      where: {
+        userId: user.id,
+        accountId: account[0].id,
+        platform: platform,
+        mobile: isMobile,
+        ipAddress: ipv4Address,
+        userAgent,
+      },
       defaults: {
-        expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-        sessionData: JSON.stringify({ email: user.email }),
+        sessionToken: JSON.stringify({
+          email: user.email,
+          name: user.name,
+          account: account[0],
+        }),
+        expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
       },
     });
 
-    console.log(session.dataValues.sessionData);
     if (isSessionCreated) {
-      session.expires = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
+      console.log("updating");
+      await session.update({
+        expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+      });
     }
 
-    const sessionData = JSON.parse(session.dataValues.sessionData);
-    SendRes(res, 200, {
-      url: `/dashboard/${account[0].role}`,
-      session: JSON.stringify({
-        email: sessionData.email,
-        // name: user./
-        currentAccountId: session.dataValues.currentAccountId,
-        expires: session.dataValues.expires
-      }),
-    });
+    const responseBody = {
+      sessionToken: session.sessionToken,
+      sessionId: session.id,
+      cookieConfig: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        domain: process.env.COOKIE_DOMAIN.toString(),
+        path: "/",
+        sameSite: "lax",
+        maxAge: session.expiresAt,
+      },
+      url:
+        account[0].role === "quizer"
+          ? process.env.QUIZER_URL
+          : account[0].role === "user"
+          ? process.env.USER_URL
+          : process.env.ADMIN_URL,
+    };
+
+    SendRes(res, 200, responseBody);
   } catch (err) {
     console.error(err);
     SendRes(res, 500, { message: "Server error", error: err });
@@ -96,5 +126,34 @@ export const register = async (req, res) => {
     SendRes(res, 200, { message: "Registration successful" });
   } catch (err) {
     SendRes(res, 500, err);
+  }
+};
+
+export const sessionValidation = async (req, res) => {
+  const { sessionId, sessionToken, role } = req.body;
+
+  if (!sessionId || !sessionToken || !role) {
+    return SendRes(res, 409, { message: "All Fields required!" });
+  }
+
+  try {
+    const session = await Session.findByPk(sessionId, {
+      include: { model: Account, attributes: ["role"] },
+    });
+
+    const sessionTokenMatch = sessionToken === session.sessionToken;
+    if (!sessionTokenMatch) {
+      return SendRes(res, 404, { message: "Invalid session token" });
+    }
+
+    const sessionAccount = session.account;
+    if (sessionAccount.role !== role) {
+      return SendRes(res, 400, {message: "Role Does Not Match"})
+    }
+
+    SendRes(res, 200, {isValid: true})
+  } catch (err) {
+    console.log(err);
+    SendRes(res, 500, { message: "Server error" });
   }
 };
