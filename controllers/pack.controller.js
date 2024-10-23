@@ -7,18 +7,22 @@ import CoverPack from "../models/images/coverPack.model.js";
 import GetQuizPrice from "../util/helpers/getQuizPrice.js";
 import GetPackPrice from "../util/helpers/getPackPrice.js";
 import AccountPack from "../models/accountPack.model.js";
+import Session from "../models/session.model.js";
 
 export const createPack = async (req, res) => {
-  const { title, description, level, isFree, category, creatorId } = req.body;
+  console.log(req.body);
+  const { title, description, level, isFree, category, sessionId } = req.body;
 
   // Check for required fields
-  if (!title || !description || !creatorId || !level || !isFree || !category) {
+  if (!title || !description || !sessionId || !level || !isFree || !category) {
     SendRes(res, 409, { message: "All fields required" });
     return;
   }
   try {
     // Check if the account exists
-    const account = await Account.findOne({ where: { id: creatorId } });
+    const session = await Session.findByPk(sessionId, {include: {model: Account}});
+
+    const account = session.account;
     if (!account) {
       return SendRes(res, 404, { message: "Account Not Found" });
     }
@@ -31,7 +35,7 @@ export const createPack = async (req, res) => {
       description,
       category,
       price: Number(0),
-      creatorId: Number(creatorId),
+      creatorId: Number(account.id),
       coverImageUrl: "",
     });
 

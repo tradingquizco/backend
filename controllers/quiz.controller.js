@@ -4,11 +4,13 @@ import QuestionImage from "../models/images/questionImage.model.js";
 import Pack from "../models/pack.model.js";
 import Quiz from "../models/quiz.model.js";
 import QuizAttempts from "../models/quizAttempts.model.js";
+import Session from "../models/session.model.js";
 import CalculatePackPrice from "../util/helpers/calculatePackPrice.js";
 import GetQuizPrice from "../util/helpers/getQuizPrice.js";
 import { SendRes } from "../util/helpers/index.js";
 
 export const createQuiz = async (req, res) => {
+  console.log(req.body);
   const {
     title,
     description,
@@ -17,7 +19,7 @@ export const createQuiz = async (req, res) => {
     options,
     level,
     packId,
-    creatorId,
+    sessionId,
   } = req.body;
 
   // Validate required fields
@@ -27,7 +29,7 @@ export const createQuiz = async (req, res) => {
     !questionText ||
     !answer ||
     !options ||
-    !creatorId ||
+    !sessionId ||
     !packId ||
     !req.files["questionImage"][0] ||
     !req.files["answerImage"][0]
@@ -45,6 +47,9 @@ export const createQuiz = async (req, res) => {
     if (packQuizzes.length >= 25)
       return SendRes(res, 400, { message: "You Hit Limit of This Pack" });
 
+    const session = await Session.findByPk(sessionId, {include: {model: Account}});
+    const account = session.account;
+
     const quiz = await Quiz.create({
       title,
       description,
@@ -52,7 +57,7 @@ export const createQuiz = async (req, res) => {
       answer,
       options,
       level,
-      creatorId,
+      creatorId: account.id,
     });
 
     const questionImg = await QuestionImage.create({
