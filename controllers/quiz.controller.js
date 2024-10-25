@@ -11,6 +11,7 @@ import { SendRes } from "../util/helpers/index.js";
 
 export const createQuiz = async (req, res) => {
   console.log(req.body);
+  console.log(req.files);
   const {
     title,
     description,
@@ -47,7 +48,9 @@ export const createQuiz = async (req, res) => {
     if (packQuizzes.length >= 25)
       return SendRes(res, 400, { message: "You Hit Limit of This Pack" });
 
-    const session = await Session.findByPk(sessionId, {include: {model: Account}});
+    const session = await Session.findByPk(sessionId, {
+      include: { model: Account },
+    });
     const account = session.account;
 
     const quiz = await Quiz.create({
@@ -146,22 +149,25 @@ export const deleteQuiz = async (req, res) => {
 };
 
 export const getSubmitInfo = async (req, res) => {
-  const accountId = req.query.accountId;
+  const sessionId = req.query.sessionId;
   const quizId = req.query.quizId;
 
-  if (!quizId || !accountId) {
+  if (!quizId || !sessionId) {
     return SendRes(res, 409, { message: "All fields required" });
   }
 
   try {
-    const account = await Account.findByPk(accountId);
+    const session = await Session.findByPk(sessionId, {
+      include: { model: Account },
+    });
+    const account = session.account;
     if (!account) return SendRes(res, 404, { message: "Account Not Found" });
 
     const quiz = await Quiz.findByPk(quizId);
     if (!quiz) return SendRes(res, 404, { message: "Quiz Not Found" });
 
     const submitInfo = await QuizAttempts.findOne({
-      where: { quizId, accountId },
+      where: { quizId, accountId: account.id },
     });
     SendRes(res, 200, submitInfo);
   } catch (err) {
@@ -170,19 +176,20 @@ export const getSubmitInfo = async (req, res) => {
 };
 
 export const submitQuiz = async (req, res) => {
-  const { quizId, accountId, selectedOption, isCurrect } = req.body;
-  if (
-    !quizId ||
-    !accountId ||
-    !selectedOption ||
-    isCurrect === null
-  ) {
+  const { quizId, sessionId, selectedOption, isCurrect } = req.body;
+  if (!quizId || !sessionId || !selectedOption || isCurrect === null) {
     SendRes(res, 409, { message: "All fields required" });
     return;
   }
   try {
+    const session = await Session.findByPk(sessionId, {
+      include: { model: Account },
+    });
+    const account = session.account;
+    if (!account) return SendRes(res, 404, { message: "Account Not Found" });
+
     const [newQuizAttempt, isCreated] = await QuizAttempts.findOrCreate({
-      where: { quizId, accountId },
+      where: { quizId, accountId: account.id },
       defaults: { isCurrect, selectedOption },
     });
     SendRes(res, 200, newQuizAttempt);
