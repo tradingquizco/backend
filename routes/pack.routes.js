@@ -9,6 +9,6 @@ router.route("/").get(getAllPacks)
 router.route("/:accountId").get(getAccountPacks)
 router.route("/update/:packId").patch(upload.single("coverPack"), updatePack)
 router.route("/add").post(addQuizToPack)
-router.route("/accountPacksList/:id").get(getAccountPacksList)
+router.route("/accountPacksList/:sessionId").get(getAccountPacksList)
 
 export default router;

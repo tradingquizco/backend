@@ -183,12 +183,14 @@ export const addQuizToPack = async (req, res) => {
 };
 
 export const getAccountPacksList = async (req, res) => {
-  const { id } = req.params;
+  const { sessionId } = req.params;
 
-  if (!id) return SendRes(res, 404, { message: "account Id required" });
+  if (!sessionId) return SendRes(res, 404, { message: "session Id required" });
 
   try {
-    const packs = await AccountPack.findAll({where: {accountId: id}});
+
+    const session = await Session.findByPk(sessionId, {include: {model: Account}})
+    const packs = await AccountPack.findAll({where: {accountId: session.account.id}});
     const updatedPack = await Promise.all(
       packs.map(async pack => {
         const packInfo = await Pack.findByPk(pack.PackId);

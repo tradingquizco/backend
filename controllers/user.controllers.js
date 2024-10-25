@@ -1,5 +1,6 @@
 import Account from "../models/account.model.js";
 import Pack from "../models/pack.model.js";
+import Session from "../models/session.model.js";
 import User from "../models/user.model.js";
 import { SendRes } from "../util/helpers/index.js";
 
@@ -64,7 +65,7 @@ export const getUserByAccount = async (req, res) => {
   }
 
   try {
-    const account = await Account.findByPk(accountId)
+    const account = await Account.findByPk(accountId);
     if (account) {
       const user = await account.getUser();
       if (user) SendRes(res, 200, user);
@@ -103,15 +104,18 @@ export const deleteUser = async (req, res) => {
 };
 
 export const addPackToUserPacks = async (req, res) => {
-  const { packId, accountId } = req.body;
+  const { packId, sessionId } = req.body;
 
-  console.log(req.body)
+  console.log(req.body);
 
-  if (!packId || !accountId)
+  if (!packId || !sessionId)
     return SendRes(res, 409, { message: "All Feilds are required" });
 
   try {
-    const account = await Account.findByPk(accountId);
+    const session = await Session.findByPk(sessionId, {
+      include: { model: Account },
+    });
+    const account = session.addHook;
     if (!account) return SendRes(res, 404, { message: "Account not found" });
 
     const pack = await Pack.findByPk(packId);
