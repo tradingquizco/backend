@@ -108,7 +108,7 @@ export const updatePack = async (req, res) => {
     const updatedPack = await pack.update(
       {
         ...updatedItems,
-        coverImageUrl: req.file ? req.file.path : pack.dataValues.coverImageUrl,
+        coverImageUrl: req.file ? req.file.filename : pack.dataValues.coverImageUrl,
       },
       {
         returning: true,
@@ -185,19 +185,25 @@ export const addQuizToPack = async (req, res) => {
 export const getAccountPacksList = async (req, res) => {
   const { sessionId } = req.params;
 
-  if (!sessionId) return SendRes(res, 404, { message: "session Id required" });
+  if (!sessionId) return SendRes(res, 404, { message: "Session ID required" });
 
   try {
+    const session = await Session.findByPk(sessionId, { include: Account });
+    if (!session || !session.account) {
+      return SendRes(res, 404, { message: "Account not found for this session" });
+    }
 
-    const session = await Session.findByPk(sessionId, {include: {model: Account}})
-    const packs = await AccountPack.findAll({where: {accountId: session.account.id}});
+    const packs = await AccountPack.findAll({
+      where: { accountId: session.account.id },
+    });
+
     const updatedPack = await Promise.all(
-      packs.map(async pack => {
+      packs.map(async (pack) => {
         const packInfo = await Pack.findByPk(pack.PackId);
-        const account = await Account.findByPk(pack.accountId)
-        return {...packInfo.dataValues, account: {...account.dataValues}}
+        const account = await Account.findByPk(pack.accountId);
+        return { ...packInfo.dataValues, account: { ...account.dataValues } };
       })
-    )
+    );
 
     SendRes(res, 200, updatedPack);
   } catch (err) {
