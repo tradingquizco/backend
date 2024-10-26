@@ -102,26 +102,28 @@ export const deleteUser = async (req, res) => {
     SendRes(res, 500, { message: "Internal server error" });
   }
 };
-
 export const addPackToUserPacks = async (req, res) => {
   const { packId, sessionId } = req.body;
 
   console.log(req.body);
 
   if (!packId || !sessionId)
-    return SendRes(res, 409, { message: "All Feilds are required" });
+    return SendRes(res, 409, { message: "All fields are required" });
 
   try {
     const session = await Session.findByPk(sessionId, {
       include: { model: Account },
     });
-    const account = session.addHook;
-    if (!account) return SendRes(res, 404, { message: "Account not found" });
+    if (!session || !session.account)
+      return SendRes(res, 404, { message: "Account not found" });
 
+    const account = session.account;
     const pack = await Pack.findByPk(packId);
     if (!pack) return SendRes(res, 404, { message: "Pack not found" });
 
-    pack.addAccount(account);
+    // Using the association method addAccount to add the pack to the user's packs
+    await account.addPack(pack);
+
     SendRes(res, 200, { message: "Pack Added" });
   } catch (err) {
     console.log(err);

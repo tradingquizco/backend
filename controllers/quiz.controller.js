@@ -99,10 +99,6 @@ export const updateQuiz = async (req, res) => {
   const { id } = req.params;
   const updatedQuizData = req.body; // Use a clearer variable name
 
-  console.log(req.files);
-  console.log(req.body);
-
-  // Check if no changes were made (empty body and no images)
   if (
     JSON.stringify(updatedQuizData) === "{}" &&
     !req.files?.["questionImage"] &&
@@ -122,10 +118,10 @@ export const updateQuiz = async (req, res) => {
       {
         ...updatedQuizData, // Spread the updated quiz data
         questionImgUrl: req.files?.["questionImage"]
-          ? req.files["questionImage"][0].path // Use the new question image if uploaded
+          ? req.files["questionImage"][0].filename // Use the new question image if uploaded
           : quiz.dataValues.questionImgUrl, // Otherwise, keep the old image
         answerImgUrl: req.files?.["answerImage"]
-          ? req.files["answerImage"][0].path // Use the new answer image if uploaded
+          ? req.files["answerImage"][0].filename // Use the new answer image if uploaded
           : quiz.dataValues.answerImgUrl, // Otherwise, keep the old image
       },
       { returning: true } // Ensure the updated object is returned
