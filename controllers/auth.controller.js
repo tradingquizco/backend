@@ -9,6 +9,12 @@ import requestIp from "request-ip";
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
+  // Validate request data
+  if (!email || !password) {
+    return SendRes(res, 400, { message: "Email and password are required" });
+  }
+
+  // Extract client details
   const userAgent = req.headers["sec-ch-ua"] || req.headers["user-agent"];
   const isMobile = req.headers["sec-ch-ua-mobile"] === "?1";
   const platform = req.headers["sec-ch-ua-platform"] || "Unknown";
@@ -17,33 +23,26 @@ export const login = async (req, res) => {
     ? clientIp.split("::ffff:")[1]
     : clientIp;
 
-  if (!email || !password) {
-    return SendRes(res, 400, { message: "Email and password are required" });
-  }
-
   try {
-    // Find the user by email
+    // Find the user and validate password
     const user = await User.findOne({ where: { email } });
-
-    if (!user) {
-      return SendRes(res, 401, { message: "Incorrect email or passwrod" });
-    }
+    if (!user) return SendRes(res, 401, { message: "Incorrect email or password" });
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) return SendRes(res, 401, { message: "Incorrect email or password" });
 
-    if (!isPasswordValid) {
-      return SendRes(res, 401, { message: "Incorrect email or passwrod" });
-    }
-
-    const account = await Account.findAll({ where: { userId: user.id } });
+    // Fetch the associated account
+    const account = await Account.findOne({ where: { userId: user.id } });
     if (!account) return SendRes(res, 404, { message: "Account Not Found" });
 
-    const expiration_at_15_days = Date.now() + 15 * 24 * 60 * 60 * 1000;
+    const expiresIn15Days = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+
+    // Find or create a session
     const [session, isSessionCreated] = await Session.findOrCreate({
       where: {
         userId: user.id,
-        accountId: account[0].id,
-        platform: platform,
+        accountId: account.id,
+        platform,
         mobile: isMobile,
         ipAddress: ipv4Address,
         userAgent,
@@ -52,45 +51,44 @@ export const login = async (req, res) => {
         sessionToken: JSON.stringify({
           email: user.email,
           name: user.name,
-          account: account[0],
+          account: { role: account.role, id: account.id }, // include only required account fields
         }),
-        expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+        expiresAt: expiresIn15Days,
       },
     });
 
+    // Update session expiry if newly created
     if (isSessionCreated) {
-      console.log("updating");
-      await session.update({
-        expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
-      });
+      await session.update({ expiresAt: expiresIn15Days });
     }
 
+    // Prepare response with secure cookie settings
     const responseBody = {
       sessionToken: session.sessionToken,
       sessionId: session.id,
       cookieConfig: {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        domain: process.env.COOKIE_DOMAIN.toString(),
+        domain: process.env.COOKIE_DOMAIN,
         path: "/",
         sameSite: "lax",
-        maxAge: session.expiresAt,
+        maxAge: expiresIn15Days.getTime(),
       },
       url:
-        account[0].role === "quizer"
+        account.role === "quizer"
           ? process.env.QUIZER_URL
-          : account[0].role === "user"
+          : account.role === "user"
           ? process.env.USER_URL
           : process.env.ADMIN_URL,
     };
 
+    // Send the response
     SendRes(res, 200, responseBody);
   } catch (err) {
-    console.error(err);
-    SendRes(res, 500, { message: "Server error", error: err });
+    console.error("Login error:", err);
+    SendRes(res, 500, { message: "Server error", error: err.message });
   }
 };
-
 export const register = async (req, res) => {
   const { username, email, password, name } = req.body;
 
