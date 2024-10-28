@@ -1,4 +1,5 @@
 import Account from "../models/account.model.js";
+import InviteModel from "../models/Invites.model.js";
 import Pack from "../models/pack.model.js";
 import Session from "../models/session.model.js";
 import User from "../models/user.model.js";
@@ -102,10 +103,9 @@ export const deleteUser = async (req, res) => {
     SendRes(res, 500, { message: "Internal server error" });
   }
 };
+
 export const addPackToUserPacks = async (req, res) => {
   const { packId, sessionId } = req.body;
-
-  console.log(req.body);
 
   if (!packId || !sessionId)
     return SendRes(res, 409, { message: "All fields are required" });
@@ -122,9 +122,65 @@ export const addPackToUserPacks = async (req, res) => {
     if (!pack) return SendRes(res, 404, { message: "Pack not found" });
 
     // Using the association method addAccount to add the pack to the user's packs
-    await account.addPack(pack);
+    await pack.addAccount(account);
 
     SendRes(res, 200, { message: "Pack Added" });
+  } catch (err) {
+    console.log(err);
+    SendRes(res, 500, { message: "Internal server error" });
+  }
+};
+
+export const inviteUser = async (req, res) => {
+  const { sessionId, inviterCode } = req.body;
+
+  if (!sessionId || !inviterCode)
+    return SendRes(res, 409, { message: "All Fields required" });
+
+  try {
+    const session = await Session.findByPk(sessionId, {
+      include: { model: User },
+    });
+
+    if (!session) return SendRes(res, 404, { message: "Session Not Found" });
+
+    const inviter_user = await User.findOne({
+      where: { invite_code: inviterCode },
+    });
+    const invited_user = session.user;
+
+    if (!inviter_user || !invited_user) {
+      return SendRes(res, 404, { message: "User Not Found" });
+    }
+
+    await InviteModel.create({
+      inviter: inviter_user.id,
+      invited: invited_user.id,
+    });
+
+    SendRes(res, 200, { message: "User Invited!" });
+  } catch (err) {
+    console.error("Error creating invite:", err);
+    SendRes(res, 500, { message: "Internal server error" });
+  }
+};
+
+export const numberOfInvites = async (req, res) => {
+  const { sessionId } = req.params;
+  console.log(sessionId)
+
+  if (!sessionId) return SendRes(res, 409, { message: "All Feilds Required" });
+
+  try {
+    const session = await Session.findByPk(sessionId, {
+      include: { model: User },
+    });
+    const user = session.user;
+
+    if (!user) return SendRes(res, 404, { message: "User Not Found" });
+
+    const numberOfInvites = await InviteModel.findAll({ inviter: user.id });
+    SendRes(res, 200, numberOfInvites.length);
   } catch (err) {
     console.log(err);
     SendRes(res, 500, { message: "Internal server error" });

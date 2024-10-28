@@ -1,6 +1,7 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../util/database.js";
 import bcrypt from "bcryptjs";
+import User from "./user.model.js";
 
 const Session = sequelize.define(
   "session",
@@ -14,15 +15,14 @@ const Session = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "users", // Assuming you have a users table
+        model: 'users',
         key: "id",
       },
       onDelete: "CASCADE",
     },
     sessionToken: {
       type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
+      allowNull: true,
     },
     userAgent: {
       type: DataTypes.STRING,
@@ -49,7 +49,6 @@ const Session = sequelize.define(
     modelName: "session",
     tableName: "sessions",
     hooks: {
-      // Inside your hooks
       beforeCreate: async (session) => {
         const saltRounds = parseInt(process.env.SALT, 10);
         if (!saltRounds) {
@@ -58,7 +57,7 @@ const Session = sequelize.define(
           );
         }
 
-        if (session.sessionToken) {
+        if (session.sessionToken || session.sessionToken !== "") {
           session.sessionToken = await bcrypt.hash(
             session.sessionToken,
             saltRounds
@@ -66,7 +65,7 @@ const Session = sequelize.define(
         }
       },
       beforeUpdate: async (session) => {
-        if (session.changed("sessionToken")) {
+        if (session.changed("sessionToken") || session.sessionToken !== "") {
           const saltRounds = parseInt(process.env.SALT, 10);
           if (!saltRounds) {
             throw new Error(

@@ -1,4 +1,5 @@
 import Account from "../models/account.model.js";
+import InviteModel from "../models/Invites.model.js";
 import Session from "../models/session.model.js";
 import User from "../models/user.model.js";
 import createHash from "../util/helpers/createHash.js";
@@ -7,7 +8,7 @@ import bcrypt from "bcryptjs";
 import requestIp from "request-ip";
 
 export const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, inviteCode } = req.body;
 
   // Validate request data
   if (!email || !password) {
@@ -26,10 +27,12 @@ export const login = async (req, res) => {
   try {
     // Find the user and validate password
     const user = await User.findOne({ where: { email } });
-    if (!user) return SendRes(res, 401, { message: "Incorrect email or password" });
+    if (!user)
+      return SendRes(res, 401, { message: "Incorrect email or password" });
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) return SendRes(res, 401, { message: "Incorrect email or password" });
+    if (!isPasswordValid)
+      return SendRes(res, 401, { message: "Incorrect email or password" });
 
     // Fetch the associated account
     const account = await Account.findOne({ where: { userId: user.id } });
@@ -51,7 +54,7 @@ export const login = async (req, res) => {
         sessionToken: JSON.stringify({
           email: user.email,
           name: user.name,
-          account: { role: account.role, id: account.id }, // include only required account fields
+          account: { role: account.role, id: account.id },
         }),
         expiresAt: expiresIn15Days,
       },
@@ -60,6 +63,19 @@ export const login = async (req, res) => {
     // Update session expiry if newly created
     if (isSessionCreated) {
       await session.update({ expiresAt: expiresIn15Days });
+    }
+
+    //checking for invite code
+    if (inviteCode) {
+      console.log(inviteCode);
+      const inviter_user = await User.findOne({
+        where: { invite_code: Number(inviteCode) },
+      });
+
+      console.log(inviter_user);
+
+      if(!inviter_user) return SendRes(res, 404, {message: "Invite Code Not Found"})
+        await InviteModel.create({ inviter: inviter_user.id, invited: user.id });
     }
 
     // Prepare response with secure cookie settings
@@ -104,7 +120,6 @@ export const register = async (req, res) => {
     SendRes(res, 409, { message: "All fields required" });
   }
 
-  // SendRes(res, 500, "sdfsf")
   try {
     const isUsernameTaken = await Account.findOne({ where: { username } });
     if (isUsernameTaken)
@@ -200,10 +215,10 @@ export const sessionValidation = async (req, res) => {
 
     const sessionAccount = session.account;
     if (sessionAccount.role !== role) {
-      return SendRes(res, 400, {message: "Role Does Not Match"})
+      return SendRes(res, 400, { message: "Role Does Not Match" });
     }
 
-    SendRes(res, 200, {isValid: true})
+    SendRes(res, 200, { isValid: true });
   } catch (err) {
     console.log(err);
     SendRes(res, 500, { message: "Server error" });

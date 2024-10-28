@@ -3,6 +3,7 @@ import sequelize from "../util/database.js";
 import bcrypt from "bcryptjs";
 import { config } from "dotenv";
 import Session from "./session.model.js";
+import { customAlphabet } from "nanoid";
 
 config();
 const User = sequelize.define(
@@ -25,6 +26,10 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    invite_code:{
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
     status: {
       type: DataTypes.ENUM("online", "offline"),
       allowNull: false,
@@ -34,6 +39,8 @@ const User = sequelize.define(
     hooks: {
       beforeCreate: async (user) => {
         const saltRounds = parseInt(process.env.SALT, 10);
+        const nanoid = customAlphabet("0123456789", 6)
+
         if (!saltRounds) {
           throw new Error(
             "SALT environment variable is not defined or invalid."
@@ -43,6 +50,8 @@ const User = sequelize.define(
         if (user.password) {
           user.password = await bcrypt.hash(user.password, saltRounds);
         }
+
+        user.invite_code = nanoid();
       },
       beforeUpdate: async (user) => {
         if (user.changed("password")) {

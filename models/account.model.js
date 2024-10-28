@@ -11,7 +11,7 @@ const Account = sequelize.define(
     },
     username: { type: DataTypes.STRING, allowNull: false },
     role: { type: DataTypes.STRING, allowNull: false },
-    profileUrl: { type: DataTypes.STRING, allowNull: true }, // You can remove profileId if you don't use it.
+    profileUrl: { type: DataTypes.STRING, allowNull: true },
   },
   {
     modelName: "account",

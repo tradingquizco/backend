@@ -19,6 +19,7 @@ import quizRoutes from "./routes/quiz.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import uploadRoutes from "./routes/images.routes.js";
 import packRoutes from './routes/pack.routes.js'
+import aiRoutes from './routes/ai.routes.js'
 import { upload } from "./util/uploadConfig.js";
 
 dotenv.config();
@@ -49,6 +50,7 @@ app.use("/api/v1/sessions", sessionRoutes);
 app.use("/api/v1/quizzes", quizRoutes);
 app.use("/api/v1/packs", packRoutes)
 app.use("/api/v1", authRoutes);
+app.use("/api/v1/ai", aiRoutes);
 app.use("/api/v1/upload", uploadRoutes);
 
 

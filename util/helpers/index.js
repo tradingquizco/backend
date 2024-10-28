@@ -10,6 +10,7 @@ import CoverPack from "../../models/images/coverPack.model.js";
 import QuizPack from "../../models/quizPack.model.js";
 import UserPack from "../../models/accountPack.model.js";
 import AccountPack from "../../models/accountPack.model.js";
+import InviteModel from "../../models/Invites.model.js";
 
 export const SendRes = (res, status = 200, body = null) =>
   res.status(status).json(body);
@@ -57,4 +58,7 @@ export const CreateAssociations = () => {
     foreignKey: "accountId", // Ensuring foreign key matches Account model
     onDelete: "CASCADE",
   });
+
+  //Invites
+  // InviteModel.belongsTo(User, { onDelete: "CASCADE" });
 };
