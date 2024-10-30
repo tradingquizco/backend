@@ -7,6 +7,7 @@ import {
   getUserByAccount,
   getUserByEmail,
   getUserById,
+  getUserInviteCode,
   inviteUser,
   numberOfInvites,
   updateUser,
@@ -24,5 +25,6 @@ router.route("/:id").delete(deleteUser);
 router.route("/addPack").post(addPackToUserPacks)
 router.route("/invite").post(inviteUser);
 router.route("/numberOfInvites/:sessionId").get(numberOfInvites);
+router.route("/inviteCode/:sessionId").get(getUserInviteCode)
 
 export default router;

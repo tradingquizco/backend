@@ -137,20 +137,38 @@ export const inviteUser = async (req, res) => {
   if (!sessionId || !inviterCode)
     return SendRes(res, 409, { message: "All Fields required" });
 
+  if (isNaN(Number(inviterCode))) {
+    return SendRes(res, 400, { message: "Inviter code must be a valid number" });
+  }
   try {
     const session = await Session.findByPk(sessionId, {
       include: { model: User },
     });
 
-    if (!session) return SendRes(res, 404, { message: "Session Not Found" });
+    if (!session) return SendRes(res, 404, { message: "You are Not Login" });
 
     const inviter_user = await User.findOne({
-      where: { invite_code: inviterCode },
+      where: { invite_code: Number(inviterCode) },
     });
     const invited_user = session.user;
 
     if (!inviter_user || !invited_user) {
-      return SendRes(res, 404, { message: "User Not Found" });
+      return SendRes(res, 404, { message: "Code Not Found" });
+    }
+
+    if (inviter_user.id === invited_user.id) {
+      return SendRes(res, 400, { message: "You cannot invite yourself" });
+    }
+
+    const existingInvite = await InviteModel.findOne({
+      where: {
+        inviter: inviter_user.id,
+        invited: invited_user.id,
+      },
+    });
+
+    if (existingInvite) {
+      return SendRes(res, 409, { message: "User has already been invited" });
     }
 
     await InviteModel.create({
@@ -167,7 +185,7 @@ export const inviteUser = async (req, res) => {
 
 export const numberOfInvites = async (req, res) => {
   const { sessionId } = req.params;
-  console.log(sessionId)
+  console.log(sessionId);
 
   if (!sessionId) return SendRes(res, 409, { message: "All Feilds Required" });
 
@@ -185,4 +203,21 @@ export const numberOfInvites = async (req, res) => {
     console.log(err);
     SendRes(res, 500, { message: "Internal server error" });
   }
+};
+
+export const getUserInviteCode = async (req, res) => {
+  const { sessionId } = req.params;
+
+  if (!sessionId) return SendRes(res, 409, { message: "All Feilds required!" });
+
+  try {
+    const session = await Session.findByPk(sessionId, {
+      include: { model: User },
+    });
+    if (!session) return SendRes(res, 404, { message: "User Not Found" });
+
+    console.log(session);
+
+    SendRes(res, 200, session.user.invite_code);
+  } catch (err) {}
 };
